@@ -60,3 +60,11 @@ class StockWarehouseOrderpoint(models.Model):
             ])
 
         return procurements
+
+    @api.multi
+    def _prepare_procurement_values(self, product_qty, date=False, purchase_date=False, group=False):
+        res = super(StockWarehouseOrderpoint, self)._prepare_procurement_values(product_qty, date=date, group=group)
+        res.update({
+            'no_auto_cancel': False,
+        })
+        return res

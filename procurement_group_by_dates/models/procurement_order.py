@@ -9,7 +9,7 @@ from odoo import api, fields, models
 class ProcurementOrder(models.Model):
     _inherit = 'procurement.order'
 
-    no_auto_cancel = fields.Boolean(
+    no_auto_cancel = fields.Boolean(default=True,
         help='Check this box to keep this procurement confirmed when a need '
         'on the related product is changed.')
 
