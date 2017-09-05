@@ -50,7 +50,6 @@ class ProcurementOrder(models.Model):
             regroupment_date = next_date + \
                 timedelta(orderpoint.regroupment_days)
             groups.append({
-                # FIXME : Currently needs to patch the standard
                 'from_date': next_date,
                 'to_date': regroupment_date,
                 'procurement_values': {

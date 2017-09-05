@@ -14,6 +14,7 @@
     ],
     'data': [
         # 'security/ir.model.access.csv',
+        'views/stock_warehouse_orderpoint.xml',
     ],
     'installable': True,
     'auto_install': False,

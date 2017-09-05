@@ -2,8 +2,9 @@
 # Copyright 2017 SYLEAM Info Services
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from datetime import timedelta
+from datetime import timedelta, datetime
 from odoo import api, fields, models
+from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT
 
 
 class StockWarehouseOrderpoint(models.Model):
@@ -23,7 +24,7 @@ class StockWarehouseOrderpoint(models.Model):
         self.ensure_one()
 
         if previous_date is None:
-            previous_date = self.last_execution_date
+            previous_date = self.last_execution_date or datetime.utcnow().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
 
         # Search the next move going out from the warehouse
         return fields.Date.from_string(self.env['stock.move'].search([
@@ -47,7 +48,8 @@ class StockWarehouseOrderpoint(models.Model):
         procurements = self.env['procurement.order']
         for orderpoint in self:
             first_date = fields.Datetime.from_string(
-                orderpoint.last_execution_date) - \
+                orderpoint.last_execution_date
+                or datetime.utcnow().strftime(DEFAULT_SERVER_DATETIME_FORMAT)) - \
                     timedelta(days=orderpoint.regroupment_days)
 
             procurements += self.env['procurement.order'].search([
