@@ -50,7 +50,6 @@ class ProcurementOrder(models.Model):
             regroupment_date = next_date + \
                 timedelta(orderpoint.regroupment_days)
             groups.append({
-                'from_date': next_date,
                 'to_date': regroupment_date,
                 'procurement_values': {
                     'group': False,
@@ -69,6 +68,15 @@ class ProcurementOrder(models.Model):
         orderpoints = self.env['stock.warehouse.orderpoint'].browse(
             orderpoint_ids)
         all_groups = {}
+
+        # By default all procurements are not run, new procurements are only seen at the end.
+        # When we have multiple dates for the same product,
+        # it will not consider previously created procurements in the stock as they are not confirmed.
+        # It will create too many needs. To correct this, we execute the needs.
+        orderpoints.mapped('procurement_ids').filtered(
+            lambda r: r.state == 'confirmed'
+        ).run()
+
         dates = {}
 
         for orderpoint in orderpoints:
