@@ -21,6 +21,9 @@ class StockWarehouseOrderpoint(models.Model):
 
     @api.multi
     def _compute_next_need_date(self, previous_date=None):
+        """
+        Find the next date to compute the needs from this date
+        """
         self.ensure_one()
 
         if previous_date is None:
@@ -46,10 +49,9 @@ class StockWarehouseOrderpoint(models.Model):
         Get the procurements starting at given date minus regroupment_days
         """
         procurements = self.env['procurement.order']
-        for orderpoint in self:
+        for orderpoint in self.filtered(lambda r: r.last_execution_date != False):
             first_date = fields.Datetime.from_string(
-                orderpoint.last_execution_date
-                or datetime.utcnow().strftime(DEFAULT_SERVER_DATETIME_FORMAT)) - \
+                orderpoint.last_execution_date) - \
                     timedelta(days=orderpoint.regroupment_days)
 
             procurements += self.env['procurement.order'].search([

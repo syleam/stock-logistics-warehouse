@@ -15,7 +15,10 @@ class ProcurementOrder(models.Model):
 
     @api.model
     def _procurement_from_orderpoint_get_grouping_key(self, orderpoint_ids):
-        # FIXME : Adapt this when Odoo has fixed the new API conversion
+        """
+        Each product will have different date so it's not possible to have a grouping.
+        To avoid grouping, we add the id of the nomenclature.
+        """
         orderpoint = self.env['stock.warehouse.orderpoint'].browse(
             orderpoint_ids)
 
@@ -26,7 +29,6 @@ class ProcurementOrder(models.Model):
 
     @api.model
     def _procurement_from_orderpoint_get_groups(self, orderpoint_ids):
-        # FIXME : Adapt this when Odoo has fixed the new API conversion
         orderpoint = self.env['stock.warehouse.orderpoint'].browse(
             orderpoint_ids)
 
@@ -40,7 +42,7 @@ class ProcurementOrder(models.Model):
         groups = []
         horizon_date = datetime.now().date() + \
             timedelta(days=orderpoint.horizon_days)
-        # TODO Find the first need date
+        # Find the first need date
         next_date = orderpoint._compute_next_need_date()
 
         # For each need before horizon :
@@ -60,51 +62,30 @@ class ProcurementOrder(models.Model):
             next_date = orderpoint._compute_next_need_date(
                 fields.Date.to_string(regroupment_date + timedelta(days=1)))
 
+        # If we have not future needs, we compute the needs for the stock.
+        if not groups:
+            return super(
+                ProcurementOrder, self
+            )._procurement_from_orderpoint_get_groups(orderpoint_ids)
+
         return groups
 
     @api.model
     def _procurement_from_orderpoint_post_process(self, orderpoint_ids):
-        # FIXME : Adapt this when Odoo has fixed the new API conversion
-        orderpoints = self.env['stock.warehouse.orderpoint'].browse(
-            orderpoint_ids)
-        all_groups = {}
+        """
+        By default all procurements are not run, new procurements are only seen at the end.
+        When we have multiple dates for the same product,
+        it will not consider previously created procurements in the stock as they are not confirmed.
+        It will create too many needs. To correct this, we execute the needs.
+        """
+        self.env['stock.warehouse.orderpoint'].browse(
+            orderpoint_ids).mapped('procurement_ids').filtered(
+                lambda r: r.state == 'confirmed'
+            ).run()
 
-        # By default all procurements are not run, new procurements are only seen at the end.
-        # When we have multiple dates for the same product,
-        # it will not consider previously created procurements in the stock as they are not confirmed.
-        # It will create too many needs. To correct this, we execute the needs.
-        orderpoints.mapped('procurement_ids').filtered(
-            lambda r: r.state == 'confirmed'
-        ).run()
-
-        dates = {}
-
-        for orderpoint in orderpoints:
-            groups = self._procurement_from_orderpoint_get_groups(
-                orderpoint.ids)
-
-            if groups:
-                # There are groups : Some needs have been treated
-                all_groups[orderpoint] = groups
-            else:
-                # No group : Nothing has been done, save the date
-                dates[orderpoint] = orderpoint.last_execution_date
-
-        res = super(
+        return super(
             ProcurementOrder, self
         )._procurement_from_orderpoint_post_process(orderpoint_ids)
-
-        # Call _procurement_from_orderpoint_get_groups to get right dates
-        for orderpoint, groups in all_groups.iteritems():
-            if groups and groups[-1]['to_date']:
-                last_date = groups[-1]['to_date']
-                orderpoint.last_execution_date = last_date
-
-        # Restore saved dates
-        for orderpoint, saved_date in dates.iteritems():
-            orderpoint.last_execution_date = saved_date
-
-        return res
 
     @api.multi
     def cancel(self):
