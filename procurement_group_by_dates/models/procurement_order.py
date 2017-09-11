@@ -21,6 +21,7 @@ class ProcurementOrder(models.Model):
         """
         orderpoint = self.env['stock.warehouse.orderpoint'].browse(
             orderpoint_ids)
+        orderpoint._compute_procurements_to_cancel()
 
         return super(
             ProcurementOrder, self
@@ -103,7 +104,7 @@ class ProcurementOrder(models.Model):
         """
         for procurement in self:
             for orderpoint in procurement.product_id.mapped('orderpoint_ids'):
-                orderpoint.last_execution_date = procurement.date_planned \
+                orderpoint.compute_date = procurement.date_planned \
                     if not orderpoint.last_execution_date else min(
                         orderpoint.last_execution_date,
                         procurement.date_planned)

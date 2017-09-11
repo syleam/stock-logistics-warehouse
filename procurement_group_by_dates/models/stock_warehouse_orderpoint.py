@@ -18,6 +18,8 @@ class StockWarehouseOrderpoint(models.Model):
         string='Regroupment', default=1,
         help='Maximum delay between procurement date and needs computation,'
         'in days.')
+    cancel_procurements = fields.Boolean(string='Recompute procurements',
+                                         help='If set, cancel all procurements from this date for recompute the good needs.')
 
     @api.multi
     def _compute_next_need_date(self, previous_date=None):
@@ -43,13 +45,13 @@ class StockWarehouseOrderpoint(models.Model):
         ], order='date', limit=1).date)
 
     @api.multi
-    def _compute_procurements_to_cancel(self, date):
+    def _compute_procurements_to_cancel(self):
         """ Return the date of the oldest procurement to cancel
 
         Get the procurements starting at given date minus regroupment_days
         """
         procurements = self.env['procurement.order']
-        for orderpoint in self.filtered(lambda r: r.last_execution_date != False):
+        for orderpoint in self.filtered(lambda r: r.cancel_procurements == True):
             first_date = fields.Datetime.from_string(
                 orderpoint.last_execution_date) - \
                     timedelta(days=orderpoint.regroupment_days)
@@ -60,7 +62,9 @@ class StockWarehouseOrderpoint(models.Model):
                 ('date_planned', '>=', fields.Datetime.to_string(first_date)),
                 ('state', 'not in', ('draft', 'cancel', 'done')),
             ])
+            orderpoint.cancel_procurements = False
 
+        procurements.cancel()
         return procurements
 
     @api.multi

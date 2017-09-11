@@ -33,11 +33,10 @@ class StockMove(models.Model):
         last_execution_date field to let the scheduler recompute all these
         needs during the next run.
         """
-        # TOOD : Update the last_execution_date only for incoming or outgoing
-        # moves
-
         for move in self:
             for orderpoint in move.product_id.mapped('orderpoint_ids'):
-                # Cancel all procurements that are after the date, to allow
-                # group the needs on the next scheduler run
-                orderpoint._compute_procurements_to_cancel(move.date).cancel()
+                orderpoint.last_execution_date = move.date \
+                        if not orderpoint.last_execution_date else min(
+                            orderpoint.last_execution_date,
+                            move.date)
+            orderpoint.cancel_procurements = True
