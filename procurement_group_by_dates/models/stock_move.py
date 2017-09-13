@@ -39,4 +39,4 @@ class StockMove(models.Model):
                         if not orderpoint.last_execution_date else min(
                             orderpoint.last_execution_date,
                             move.date)
-            orderpoint.cancel_procurements = True
+                orderpoint.cancel_procurements = True
