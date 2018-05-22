@@ -36,8 +36,8 @@ class StockMove(models.Model):
         """
         for move in self:
             for orderpoint in move.product_id.mapped('orderpoint_ids'):
-                orderpoint.last_execution_date = move.date \
-                        if not orderpoint.last_execution_date else min(
-                            orderpoint.last_execution_date,
-                            move.date)
+                orderpoint.sudo().last_execution_date = move.date \
+                    if not orderpoint.last_execution_date else min(
+                        orderpoint.last_execution_date,
+                        move.date)
                 orderpoint.cancel_procurements = True

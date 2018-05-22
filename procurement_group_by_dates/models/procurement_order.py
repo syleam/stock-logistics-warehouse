@@ -9,9 +9,11 @@ from odoo import api, fields, models
 class ProcurementOrder(models.Model):
     _inherit = 'procurement.order'
 
-    no_auto_cancel = fields.Boolean(default=True,
+    no_auto_cancel = fields.Boolean(
+        default=True,
         help='Check this box to keep this procurement confirmed when a need '
-        'on the related product is changed.')
+        'on the related product is changed.'
+    )
 
     @api.model
     def _procurement_from_orderpoint_get_grouping_key(self, orderpoint_ids):
@@ -82,7 +84,7 @@ class ProcurementOrder(models.Model):
         self.env['stock.warehouse.orderpoint'].browse(
             orderpoint_ids).mapped('procurement_ids').filtered(
                 lambda r: r.state == 'confirmed'
-            ).run()
+        ).run()
 
         return super(
             ProcurementOrder, self
@@ -104,7 +106,7 @@ class ProcurementOrder(models.Model):
         """
         for procurement in self:
             for orderpoint in procurement.product_id.mapped('orderpoint_ids'):
-                orderpoint.compute_date = procurement.date_planned \
+                orderpoint.sudo().last_execution_date = procurement.date_planned \
                     if not orderpoint.last_execution_date else min(
                         orderpoint.last_execution_date,
                         procurement.date_planned)
