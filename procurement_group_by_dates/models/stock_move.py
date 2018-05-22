@@ -8,6 +8,7 @@ from odoo import api, models
 class StockMove(models.Model):
     _inherit = 'stock.move'
 
+    @api.returns('self')
     @api.multi
     def action_confirm(self):
         res = super(StockMove, self).action_confirm()
